@@ -1,0 +1,25 @@
+{
+    "name": "xsuchy09/uctenkovka",
+    "description": "Library for connection to Uctenkovka API (send EET receipts into Uctenkovka).",
+    "type": "library",
+    "require": {
+        "php": ">=7.1",
+        "ext-curl": "*",
+        "ext-openssl": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^7.5"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Ing. Petr Suchy",
+            "email": "suchy@wamos.cz",
+            "homepage": "https://www.wamos.cz",
+            "role": "Developer"
+        }
+    ],
+    "autoload": {
+        "classmap": ["src/"]
+    }
+}
