@@ -18,6 +18,9 @@ use Exception;
  */
 class RequestException extends Exception
 {
-	const GET_METHOD_DISABLED = 1;
-	const SET_METHOD_DISABLED = 2;
+	const PROPERTY_NOT_EXISTS = 1;
+	const METHOD_NOT_EXISTS = 2;
+	const FIK_NOT_VALID = 3;
+	const BKP_NOT_VALID = 4;
+	const DATETIME_IN_PREPARE = 5;
 }

@@ -138,12 +138,36 @@ class Request
 	public function __construct(?array $data = null)
 	{
 		if ($data !== null) {
-			foreach ($data as $key => $value) {
-				if (true === property_exists(this, $key)) {
-					$this->$key = $value;
-				}
-			}
+			$this->prepare($data);
 		}
+	}
+
+	/**
+	 * Set more properties at once. Keys are properties names, values its values.
+	 *
+	 * @param array $data
+	 *
+	 * @return Request
+	 * @throws RequestException
+	 */
+	public function prepare(array $data): Request
+	{
+		foreach ($data as $key => $value) {
+			if (false === property_exists($this, $key)) {
+				throw new RequestException(sprintf('Property "%s" not exists.', $key), RequestException::PROPERTY_NOT_EXISTS);
+			}
+			// @codeCoverageIgnoreStart
+			$method = sprintf('set%s', ucfirst($key));
+			if (false === method_exists($this, $method)) {
+				throw new RequestException(sprintf('Method "%s" not exists.', $method), RequestException::METHOD_NOT_EXISTS);
+			}
+			// @codeCoverageIgnoreEnd
+			if ($key === 'dateTime') {
+				throw new RequestException('$dateTime property can not be set via prepare method. It is just helper to set $date and $time properties at once from DateTime instance.', RequestException::DATETIME_IN_PREPARE);
+			}
+			$this->$method($value);
+		}
+		return $this;
 	}
 
 	/**
@@ -215,10 +239,13 @@ class Request
 	 * @param string $fik
 	 *
 	 * @return Request
+	 * @throws RequestException
 	 */
 	public function setFik(string $fik): Request
 	{
-		if (preg_match('/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}(-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}-[0-9a-fA-F]{2})?$/', $fik))
+		if ($fik !== '' && preg_match('/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}(-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}-[0-9a-fA-F]{2})?$/', $fik) !== 1) {
+			throw new RequestException('FIK is not valid.', RequestException::FIK_NOT_VALID);
+		}
 		$this->fik = $fik;
 		return $this;
 	}
@@ -235,9 +262,13 @@ class Request
 	 * @param string $bkp
 	 *
 	 * @return Request
+	 * @throws RequestException
 	 */
 	public function setBkp(string $bkp): Request
 	{
+		if ($bkp !== '' && preg_match('/^[0-9a-fA-F]{8}-[0-9a-fA-F]{8}(-[0-9a-fA-F]{8}-[0-9a-fA-F]{8}-[0-9a-fA-F]{8})?$/', $bkp) !== 1) {
+			throw new RequestException('BKP is not valid.', RequestException::BKP_NOT_VALID);
+		}
 		$this->bkp = $bkp;
 		return $this;
 	}
@@ -252,12 +283,23 @@ class Request
 
 	/**
 	 * @param string $date
+	 * @param bool   $setDateTime If dateTime property should be set too or not.
 	 *
 	 * @return Request
 	 */
-	public function setDate(string $date): Request
+	public function setDate(string $date, bool $setDateTime = true): Request
 	{
 		$this->date = $date;
+
+		if ($date !== '' && $setDateTime === true) {
+			$tmpDate = DateTime::createFromFormat('Y-m-d', $this->date);
+			if ($this->dateTime instanceof DateTime) {
+				$this->dateTime->setDate($tmpDate->format('Y'), $tmpDate->format('n'), $tmpDate->format('j'));
+			} else {
+				$this->dateTime = $tmpDate;
+			}
+		}
+
 		return $this;
 	}
 
@@ -271,12 +313,28 @@ class Request
 
 	/**
 	 * @param string $time
+	 * @param bool   $setDateTime If dateTime property should be set too or not.
 	 *
 	 * @return Request
 	 */
-	public function setTime(string $time): Request
+	public function setTime(string $time, bool $setDateTime = true): Request
 	{
 		$this->time = $time;
+
+		if ($time !== '' && $setDateTime === true) {
+			if (mb_strlen($this->time) === 8) {
+				$format = 'H:i:s';
+			} else {
+				$format = 'H:i';
+			}
+			$tmpDate = DateTime::createFromFormat($format, $this->time);
+			if ($this->dateTime instanceof DateTime) {
+				$this->dateTime->setTime($tmpDate->format('G'), $tmpDate->format('i'), $tmpDate->format('s'));
+			} else {
+				$this->dateTime = $tmpDate;
+			}
+		}
+
 		return $this;
 	}
 
@@ -327,15 +385,20 @@ class Request
 	}
 
 	/**
-	 * @param DateTime $dateTime
+	 * @param DateTime|null $dateTime
 	 *
 	 * @return Request
 	 */
-	public function setDateTime(DateTime $dateTime): Request
+	public function setDateTime(?DateTime $dateTime = null): Request
 	{
 		$this->dateTime = $dateTime;
-		$this->setDate($this->dateTime->format('Y-m-d'));
-		$this->setTime($this->dateTime->format('H:i'));
+		if ($this->dateTime === null) {
+			$this->setDate('', false);
+			$this->setTime('', false);
+		} else {
+			$this->setDate($this->dateTime->format('Y-m-d'), false);
+			$this->setTime($this->dateTime->format('H:i'), false);
+		}
 		return $this;
 	}
 
@@ -357,6 +420,33 @@ class Request
 			'amount' => $this->getAmount(),
 			'simpleMode' => $this->isSimpleMode()
 		];
+		//$data = array_filter($data, function($value) { return $value !== ''; });
 		return json_encode($data);
+	}
+
+	/**
+	 * Reset data to default values.
+	 *
+	 * @return Request
+	 * @throws RequestException
+	 */
+	public function reset(): Request
+	{
+		$data = [
+			'email' => '',
+			'phone' => '',
+			'basicConsent' => true,
+			'fik' => '',
+			'bkp' => '',
+			'date' => '',
+			'time' => '',
+			'amount' => 0,
+			'simpleMode' => false
+		];
+		$this->prepare($data);
+
+		$this->dateTime = null;
+
+		return $this;
 	}
 }
