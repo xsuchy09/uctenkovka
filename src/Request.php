@@ -11,6 +11,7 @@ namespace xsuchy09\Uctenkovka;
 
 
 use DateTime;
+use PHPUnit\Runner\Exception;
 use xsuchy09\Uctenkovka\Exception\RequestException;
 
 /**
@@ -126,14 +127,9 @@ class Request
 	protected $simpleMode = false;
 
 	/**
-	 * For auto reproducing of $date and $time.
-	 *
-	 * @var DateTime
-	 */
-	protected $dateTime;
-
-	/**
 	 * Request constructor.
+	 *
+	 * @codeCoverageIgnore
 	 */
 	public function __construct(?array $data = null)
 	{
@@ -162,9 +158,6 @@ class Request
 				throw new RequestException(sprintf('Method "%s" not exists.', $method), RequestException::METHOD_NOT_EXISTS);
 			}
 			// @codeCoverageIgnoreEnd
-			if ($key === 'dateTime') {
-				throw new RequestException('$dateTime property can not be set via prepare method. It is just helper to set $date and $time properties at once from DateTime instance.', RequestException::DATETIME_IN_PREPARE);
-			}
 			$this->$method($value);
 		}
 		return $this;
@@ -286,17 +279,16 @@ class Request
 	 * @param bool   $setDateTime If dateTime property should be set too or not.
 	 *
 	 * @return Request
+	 * @throws RequestException
 	 */
 	public function setDate(string $date, bool $setDateTime = true): Request
 	{
 		$this->date = $date;
 
-		if ($date !== '' && $setDateTime === true) {
+		if ($date !== '') {
 			$tmpDate = DateTime::createFromFormat('Y-m-d', $this->date);
-			if ($this->dateTime instanceof DateTime) {
-				$this->dateTime->setDate($tmpDate->format('Y'), $tmpDate->format('n'), $tmpDate->format('j'));
-			} else {
-				$this->dateTime = $tmpDate;
+			if ($tmpDate === false) {
+				throw new RequestException('Date is not in valid ISO-8601 format (Y-m-d).', RequestException::DATE_NOT_VALID);
 			}
 		}
 
@@ -321,17 +313,15 @@ class Request
 	{
 		$this->time = $time;
 
-		if ($time !== '' && $setDateTime === true) {
+		if ($time !== '') {
 			if (mb_strlen($this->time) === 8) {
 				$format = 'H:i:s';
 			} else {
 				$format = 'H:i';
 			}
 			$tmpDate = DateTime::createFromFormat($format, $this->time);
-			if ($this->dateTime instanceof DateTime) {
-				$this->dateTime->setTime($tmpDate->format('G'), $tmpDate->format('i'), $tmpDate->format('s'));
-			} else {
-				$this->dateTime = $tmpDate;
+			if ($tmpDate === false) {
+				throw new RequestException('Time is not in valid ISO-8601 format (H:i or H:i:s)', RequestException::TIME_NOT_VALID);
 			}
 		}
 
@@ -377,28 +367,18 @@ class Request
 	}
 
 	/**
-	 * @return DateTime|null
-	 */
-	public function getDateTime(): ?DateTime
-	{
-		return $this->dateTime;
-	}
-
-	/**
 	 * @param DateTime|null $dateTime
 	 *
 	 * @return Request
+	 * @throws RequestException
 	 */
 	public function setDateTime(?DateTime $dateTime = null): Request
 	{
-		$this->dateTime = $dateTime;
-		if ($this->dateTime === null) {
-			$this->setDate('', false);
-			$this->setTime('', false);
-		} else {
-			$this->setDate($this->dateTime->format('Y-m-d'), false);
-			$this->setTime($this->dateTime->format('H:i'), false);
+		if ($dateTime === null) {
+			$dateTime = new DateTime();
 		}
+		$this->setDate($dateTime->format('Y-m-d'));
+		$this->setTime($dateTime->format('H:i'));
 		return $this;
 	}
 
@@ -444,8 +424,6 @@ class Request
 			'simpleMode' => false
 		];
 		$this->prepare($data);
-
-		$this->dateTime = null;
 
 		return $this;
 	}

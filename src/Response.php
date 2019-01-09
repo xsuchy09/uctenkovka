@@ -48,6 +48,16 @@ class Response
 	protected $failure;
 
 	/**
+	 * Response constructor.
+	 *
+	 * @codeCoverageIgnore
+	 */
+	public function __construct()
+	{
+
+	}
+
+	/**
 	 * @return string
 	 */
 	public function getReceiptStatus(): string

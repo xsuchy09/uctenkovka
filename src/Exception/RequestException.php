@@ -22,5 +22,6 @@ class RequestException extends Exception
 	const METHOD_NOT_EXISTS = 2;
 	const FIK_NOT_VALID = 3;
 	const BKP_NOT_VALID = 4;
-	const DATETIME_IN_PREPARE = 5;
+	const DATE_NOT_VALID = 5;
+	const TIME_NOT_VALID = 6;
 }

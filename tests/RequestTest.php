@@ -50,7 +50,6 @@ class RequestTest extends \PHPUnit\Framework\TestCase
 	 * @covers \xsuchy09\Uctenkovka\Request::setAmount
 	 * @covers \xsuchy09\Uctenkovka\Request::isSimpleMode
 	 * @covers \xsuchy09\Uctenkovka\Request::setSimpleMode
-	 * @covers \xsuchy09\Uctenkovka\Request::getDateTime
 	 * @covers \xsuchy09\Uctenkovka\Request::getJson
 	 *
 	 * @throws \xsuchy09\Uctenkovka\Exception\RequestException
@@ -78,8 +77,6 @@ class RequestTest extends \PHPUnit\Framework\TestCase
 		$this->assertEquals($data['time'], $this->request->getTime());
 		$this->assertEquals($data['amount'], $this->request->getAmount());
 		$this->assertEquals($data['simpleMode'], $this->request->isSimpleMode());
-		$this->assertEquals($data['date'], $this->request->getDateTime()->format('Y-m-d'));
-		$this->assertEquals($data['time'], $this->request->getDateTime()->format('H:i'));
 		$this->assertEquals(json_encode($data), $this->request->getJson());
 	}
 
@@ -95,21 +92,6 @@ class RequestTest extends \PHPUnit\Framework\TestCase
 		];
 		$this->expectException(RequestException::class);
 		$this->expectExceptionCode(RequestException::PROPERTY_NOT_EXISTS);
-		$this->request->prepare($data);
-	}
-
-	/**
-	 * @covers \xsuchy09\Uctenkovka\Request::prepare
-	 *
-	 * @throws RequestException
-	 */
-	public function testPrepareExceptionDateTime()
-	{
-		$data = [
-			'dateTime' => new DateTime()
-		];
-		$this->expectException(RequestException::class);
-		$this->expectExceptionCode(RequestException::DATETIME_IN_PREPARE);
 		$this->request->prepare($data);
 	}
 
@@ -141,32 +123,47 @@ class RequestTest extends \PHPUnit\Framework\TestCase
 	 * @covers \xsuchy09\Uctenkovka\Request::setDateTime
 	 * @covers \xsuchy09\Uctenkovka\Request::setDate
 	 * @covers \xsuchy09\Uctenkovka\Request::getDate
-	 * @covers \xsuchy09\Uctenkovka\Request::getDateTime
 	 * @covers \xsuchy09\Uctenkovka\Request::setTime
 	 * @covers \xsuchy09\Uctenkovka\Request::getTime
 	 */
 	public function testSetDateTime()
 	{
-		$dateTime = new DateTime();
+		$dateTime = DateTime::createFromFormat('Y-m-d H:i', '2018-03-17 16:41');
 		$this->request->setDateTime($dateTime);
-		$this->assertEquals($dateTime, $this->request->getDateTime());
 		$this->assertEquals($dateTime->format('Y-m-d'), $this->request->getDate());
 		$this->assertEquals($dateTime->format('H:i'), $this->request->getTime());
 
-		$date = '2018-03-17';
-		$this->request->setDate($date);
-		$this->assertEquals($date, $this->request->getDate());
-		$this->assertEquals($date, $this->request->getDateTime()->format('Y-m-d'));
-
-		$date = '2018-03-18';
+		$dateTime = new DateTime();
 		$this->request->setDateTime(null);
-		$this->request->setDate($date);
-		$this->assertEquals($date, $this->request->getDate());
-		$this->assertEquals($date, $this->request->getDateTime()->format('Y-m-d'));
+		$this->assertEquals($dateTime->format('Y-m-d'), $this->request->getDate());
+		$this->assertEquals($dateTime->format('H:i'), $this->request->getTime());
 	}
 
 	/**
-	 * @covers \xsuchy09\Uctenkovka\Request::getDateTime
+	 * @covers \xsuchy09\Uctenkovka\Request::setDate
+	 *
+	 * @throws RequestException
+	 */
+	public function testSetDateException()
+	{
+		$this->expectException(RequestException::class);
+		$this->expectExceptionCode(RequestException::DATE_NOT_VALID);
+		$this->request->setDate('foo');
+	}
+
+	/**
+	 * @covers \xsuchy09\Uctenkovka\Request::setTime
+	 *
+	 * @throws RequestException
+	 */
+	public function testSetTimeException()
+	{
+		$this->expectException(RequestException::class);
+		$this->expectExceptionCode(RequestException::TIME_NOT_VALID);
+		$this->request->setTime('foo');
+	}
+
+	/**
 	 * @covers \xsuchy09\Uctenkovka\Request::setTime
 	 * @covers \xsuchy09\Uctenkovka\Request::getTime
 	 */
@@ -175,21 +172,17 @@ class RequestTest extends \PHPUnit\Framework\TestCase
 		$time = '16:41';
 		$this->request->setTime($time);
 		$this->assertEquals($time, $this->request->getTime());
-		$this->assertEquals($time, $this->request->getDateTime()->format('H:i'));
 
 		$time = '16:41:58';
 		$this->request->setTime($time);
 		$this->assertEquals($time, $this->request->getTime());
-		$this->assertEquals($time, $this->request->getDateTime()->format('H:i:s'));
-
-		$time = '16:41:59';
-		$this->request->setDateTime(null);
-		$this->request->setTime($time);
-		$this->assertEquals($time, $this->request->getTime());
-		$this->assertEquals($time, $this->request->getDateTime()->format('H:i:s'));
 	}
 
-
+	/**
+	 * @covers \xsuchy09\Uctenkovka\Request::reset
+	 *
+	 * @throws RequestException
+	 */
 	public function testReset()
 	{
 		$data = [
