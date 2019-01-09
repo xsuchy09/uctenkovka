@@ -1,15 +1,18 @@
 <?php
 /******************************************************************************
  * Author: Petr Suchy (xsuchy09) <suchy@wamos.cz> <https://www.wamos.cz>
- * Project: EET - 3rdPartyAPI
+ * Project: EET - Uctenkovka
  * Date: 8.1.19
  * Time: 17:08
  * Copyright: (c) Petr Suchy (xsuchy09) <suchy@wamos.cz> <http://www.wamos.cz>
  *****************************************************************************/
 
-namespace xsuchy09\EET3rdPartyAPI;
+namespace xsuchy09\Uctenkovka;
 
-
+/**
+ * Class Response
+ * @package xsuchy09\Uctenkovka
+ */
 class Response
 {
 	/**
@@ -22,7 +25,7 @@ class Response
 	 *
 	 * @var string
 	 */
-	public $receiptStatus;
+	protected $receiptStatus;
 
 	/**
 	 * Status of receipt assignment to player account.
@@ -34,7 +37,7 @@ class Response
 	 *
 	 * @var string
 	 */
-	public $playerAssignmentStatus;
+	protected $playerAssignmentStatus;
 
 
 	/**
@@ -42,7 +45,7 @@ class Response
 	 *
 	 * @var array
 	 */
-	public $failure;
+	protected $failure;
 
 	/**
 	 * @return string

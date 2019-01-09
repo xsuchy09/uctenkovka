@@ -1,19 +1,23 @@
 <?php
 /******************************************************************************
  * Author: Petr Suchy (xsuchy09) <suchy@wamos.cz> <https://www.wamos.cz>
- * Project: EET - 3rdPartyAPI
+ * Project: EET - Uctenkovka
  * Date: 8.1.19
  * Time: 15:29
  * Copyright: (c) Petr Suchy (xsuchy09) <suchy@wamos.cz> <http://www.wamos.cz>
  *****************************************************************************/
 
-namespace xsuchy09\EET3rdPartyAPI;
+namespace xsuchy09\Uctenkovka;
 
 
 use stdClass;
-use xsuchy09\EET3rdPartyAPI\Exception\EET3rdPartyAPIException;
+use xsuchy09\Uctenkovka\Exception\UctenkovkaException;
 
-class EET3rdPartyAPI
+/**
+ * Class EET3rdPartyAPI
+ * @package xsuchy09\EET3rdPartyAPI
+ */
+class Uctenkovka
 {
 	const URL_TESTING = 'https://extapi.uctenkovka-test.cz/receipts';
 	const URL_PRODUCTION = 'https://extapi.uctenkovka.cz/receipts';
@@ -77,7 +81,7 @@ class EET3rdPartyAPI
 	 *
 	 * @param string|null $mode
 	 *
-	 * @throws EET3rdPartyAPIException
+	 * @throws UctenkovkaException
 	 */
 	public function __construct(?string $mode = null)
 	{
@@ -97,16 +101,16 @@ class EET3rdPartyAPI
 	/**
 	 * @param string $mode
 	 *
-	 * @return EET3rdPartyAPI
+	 * @return Uctenkovka
 	 *
-	 * @throws EET3rdPartyAPIException
+	 * @throws UctenkovkaException
 	 */
-	public function setMode(string $mode): EET3rdPartyAPI
+	public function setMode(string $mode): Uctenkovka
 	{
 		$constantName = sprintf('URL_%s', mb_strtoupper($mode));
-		$constant = sprintf('%s::%s', EET3rdPartyAPI::class, $constantName);
+		$constant = sprintf('%s::%s', Uctenkovka::class, $constantName);
 		if (false === defined($constant)) {
-			throw new EET3rdPartyAPIException('Unknown mode. Use "production" or "testing".', EET3rdPartyAPIException::UNKNOWN_MODE);
+			throw new UctenkovkaException('Unknown mode. Use "production" or "testing".', UctenkovkaException::UNKNOWN_MODE);
 		}
 		$this->mode = $mode;
 		$this->url = constant($constant);
@@ -121,7 +125,7 @@ class EET3rdPartyAPI
 	 * @param array|null $userOptions
 	 *
 	 * @return bool
-	 * @throws EET3rdPartyAPIException
+	 * @throws UctenkovkaException
 	 */
 	public function send(Request $request, ?array $userOptions = null): bool
 	{
@@ -136,7 +140,7 @@ class EET3rdPartyAPI
 		$data = curl_exec($ch);
 
 		if ($data === false) {
-			throw new EET3rdPartyAPIException('Curl error: %s - %s', curl_errno($ch), curl_error($ch));
+			throw new UctenkovkaException(sprintf('Curl error: %s - %s', curl_errno($ch), curl_error($ch)), UctenkovkaException::CURL_ERROR);
 		}
 
 		$this->setResponseRaw(json_decode($data));
@@ -155,7 +159,7 @@ class EET3rdPartyAPI
 
 			return false;
 		} else {
-			throw new EET3rdPartyAPIException('Unknown HTTP Code Response status.', EET3rdPartyAPIException::UNKNOWN_RESPONSE);
+			throw new UctenkovkaException('Unknown HTTP Code Response status.', UctenkovkaException::UNKNOWN_RESPONSE);
 		}
 	}
 
@@ -180,23 +184,28 @@ class EET3rdPartyAPI
 			CURLOPT_SSL_VERIFYHOST => 2,
 			CURLOPT_TIMEOUT => 10,
 
-			CURLOPT_POSTFIELDS => json_encode($request),
-
-			CURLOPT_CAINFO => $this->getSslCA(),
-
-			CURLOPT_SSLCERT => $this->getSslCert(),
-			CURLOPT_SSLCERTPASSWD => $this->getSslCertPassword(),
+			CURLOPT_POSTFIELDS => $request->getJson(),
 			CURLOPT_SSLCERTTYPE => 'PEM'
 		];
+
+		if ($this->getSslCA() !== null) {
+			$options[CURLOPT_CAINFO] = $this->getSslCA();
+		}
+		if ($this->getSslCert() !== null) {
+			$options[CURLOPT_SSLCERT] = $this->getSslCert();
+			if ($this->getSslCertPassword() !== null) {
+				$options[CURLOPT_SSLCERTPASSWD] = $this->getSslCertPassword();
+			}
+		}
 
 		return $options;
 	}
 
 
 	/**
-	 * @return string
+	 * @return string|null
 	 */
-	public function getSslCA(): string
+	public function getSslCA(): ?string
 	{
 		return $this->sslCA;
 	}
@@ -204,22 +213,22 @@ class EET3rdPartyAPI
 	/**
 	 * @param string $sslCA
 	 *
-	 * @return EET3rdPartyAPI
-	 * @throws EET3rdPartyAPIException
+	 * @return Uctenkovka
+	 * @throws UctenkovkaException
 	 */
-	public function setSslCA(string $sslCA): EET3rdPartyAPI
+	public function setSslCA(string $sslCA): Uctenkovka
 	{
 		if (false === file_exists($sslCA)) {
-			throw new EET3rdPartyAPIException('CA certificate does not exists.', EET3rdPartyAPIException::CA_CERT_NOT_EXISTS);
+			throw new UctenkovkaException('CA certificate does not exists.', UctenkovkaException::CA_CERT_NOT_EXISTS);
 		}
 		$this->sslCA = $sslCA;
 		return $this;
 	}
 
 	/**
-	 * @return string
+	 * @return string|null
 	 */
-	public function getSslCert(): string
+	public function getSslCert(): ?string
 	{
 		return $this->sslCert;
 	}
@@ -227,22 +236,22 @@ class EET3rdPartyAPI
 	/**
 	 * @param string $sslCert
 	 *
-	 * @return EET3rdPartyAPI
-	 * @throws EET3rdPartyAPIException
+	 * @return Uctenkovka
+	 * @throws UctenkovkaException
 	 */
-	public function setSslCert(string $sslCert): EET3rdPartyAPI
+	public function setSslCert(string $sslCert): Uctenkovka
 	{
 		if (false === file_exists($sslCert)) {
-			throw new EET3rdPartyAPIException('SSL certificate does not exists.', EET3rdPartyAPIException::SSL_CERT_NOT_EXISTS);
+			throw new UctenkovkaException('SSL certificate does not exists.', UctenkovkaException::SSL_CERT_NOT_EXISTS);
 		}
 		$this->sslCert = $sslCert;
 		return $this;
 	}
 
 	/**
-	 * @return string
+	 * @return string|null
 	 */
-	public function getSslCertPassword(): string
+	public function getSslCertPassword(): ?string
 	{
 		return $this->sslCertPassword;
 	}
@@ -250,9 +259,9 @@ class EET3rdPartyAPI
 	/**
 	 * @param string $sslCertPassword
 	 *
-	 * @return EET3rdPartyAPI
+	 * @return Uctenkovka
 	 */
-	public function setSslCertPassword(string $sslCertPassword): EET3rdPartyAPI
+	public function setSslCertPassword(string $sslCertPassword): Uctenkovka
 	{
 		$this->sslCertPassword = $sslCertPassword;
 		return $this;

@@ -1,17 +1,22 @@
 <?php
 /******************************************************************************
  * Author: Petr Suchy (xsuchy09) <suchy@wamos.cz> <https://www.wamos.cz>
- * Project: EET - 3rdPartyAPI
+ * Project: EET - Uctenkovka
  * Date: 8.1.19
  * Time: 15:36
  * Copyright: (c) Petr Suchy (xsuchy09) <suchy@wamos.cz> <http://www.wamos.cz>
  *****************************************************************************/
 
-namespace xsuchy09\EET3rdPartyAPI;
+namespace xsuchy09\Uctenkovka;
 
 
 use DateTime;
+use xsuchy09\Uctenkovka\Exception\RequestException;
 
+/**
+ * Class Request
+ * @package xsuchy09\Uctenkovka
+ */
 class Request
 {
 
@@ -23,7 +28,7 @@ class Request
 	 *
 	 * @var string
 	 */
-	public $email;
+	protected $email = '';
 
 	/**
 	 * Player's phone number, used to identify the player in Účtenkovka only if email parameter is not specified.
@@ -36,7 +41,7 @@ class Request
 	 *
 	 * @var string
 	 */
-	public $phone;
+	protected $phone = '';
 
 	/**
 	 * Player's explicit consent to the processing of their personal data. If not true, the receipt registration is rejected.
@@ -47,7 +52,7 @@ class Request
 	 *
 	 * @var bool
 	 */
-	public $basicConsent = true;
+	protected $basicConsent = true;
 
 	/**
 	 * FIK code. Only the first 3 parts (18 characters) of FIK are required, or it must be specified in full form.
@@ -61,7 +66,7 @@ class Request
 	 *
 	 * @var string
 	 */
-	public $fik;
+	protected $fik = '';
 
 	/**
 	 * BKP code. Only the first 2 parts (17 characters) of BKP are required, or it must be specified in full form.
@@ -75,7 +80,7 @@ class Request
 	 *
 	 * @var string
 	 */
-	public $bkp;
+	protected $bkp = '';
 
 	/**
 	 * Can be reproduced from $dateTime - Date of sale in ISO-8601 format.
@@ -85,7 +90,7 @@ class Request
 	 *
 	 * @var string
 	 */
-	public $date;
+	protected $date = '';
 
 	/**
 	 * Can be reproduced from $dateTime - Time of sale in ISO-8601 format, seconds are optional.
@@ -96,7 +101,7 @@ class Request
 	 *
 	 * @var string
 	 */
-	public $time;
+	protected $time = '';
 
 	/**
 	 * Total amount in hellers.
@@ -107,7 +112,7 @@ class Request
 	 *
 	 * @var int
 	 */
-	public $amount;
+	protected $amount = 0;
 
 	/**
 	 * Sale regime, false for regular regime (default), true for simplified regime.
@@ -118,7 +123,7 @@ class Request
 	 *
 	 * @var bool
 	 */
-	public $simpleMode = false;
+	protected $simpleMode = false;
 
 	/**
 	 * For auto reproducing of $date and $time.
@@ -126,6 +131,20 @@ class Request
 	 * @var DateTime
 	 */
 	protected $dateTime;
+
+	/**
+	 * Request constructor.
+	 */
+	public function __construct(?array $data = null)
+	{
+		if ($data !== null) {
+			foreach ($data as $key => $value) {
+				if (true === property_exists(this, $key)) {
+					$this->$key = $value;
+				}
+			}
+		}
+	}
 
 	/**
 	 * @return string
@@ -199,6 +218,7 @@ class Request
 	 */
 	public function setFik(string $fik): Request
 	{
+		if (preg_match('/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}(-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}-[0-9a-fA-F]{2})?$/', $fik))
 		$this->fik = $fik;
 		return $this;
 	}
@@ -299,9 +319,9 @@ class Request
 	}
 
 	/**
-	 * @return DateTime
+	 * @return DateTime|null
 	 */
-	public function getDateTime(): DateTime
+	public function getDateTime(): ?DateTime
 	{
 		return $this->dateTime;
 	}
@@ -319,4 +339,24 @@ class Request
 		return $this;
 	}
 
+	/**
+	 * Get json for request.
+	 *
+	 * @return string
+	 */
+	public function getJson(): string
+	{
+		$data = [
+			'email' => $this->getEmail(),
+			'phone' => $this->getPhone(),
+			'basicConsent' => $this->isBasicConsent(),
+			'fik' => $this->getFik(),
+			'bkp' => $this->getBkp(),
+			'date' => $this->getDate(),
+			'time' => $this->getTime(),
+			'amount' => $this->getAmount(),
+			'simpleMode' => $this->isSimpleMode()
+		];
+		return json_encode($data);
+	}
 }
