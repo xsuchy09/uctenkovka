@@ -14,13 +14,15 @@ use stdClass;
 use xsuchy09\Uctenkovka\Exception\UctenkovkaException;
 
 /**
- * Class EET3rdPartyAPI
- * @package xsuchy09\EET3rdPartyAPI
+ * Class Uctenkovka
+ * @package xsuchy09\Uctenkovka
  */
 class Uctenkovka
 {
 	const URL_TESTING = 'https://extapi.uctenkovka-test.cz/receipts';
 	const URL_PRODUCTION = 'https://extapi.uctenkovka.cz/receipts';
+
+	const DEFAULT_SSL_CA = __DIR__ . '/certs/cacert-2018-12-05.pem';
 
 	/**
 	 * Production or testing mode. Default testing.
@@ -45,7 +47,7 @@ class Uctenkovka
 	 *
 	 * @var string
 	 */
-	protected $sslCA = __DIR__ . '/certs/cacert-2018-12-05.pem';
+	protected $sslCA = self::DEFAULT_SSL_CA;
 
 	/**
 	 * Path to file.
@@ -62,22 +64,17 @@ class Uctenkovka
 	protected $sslCertPassword;
 
 	/**
-	 * Raw response from API.
-	 *
-	 * @var stdClass|array|null
-	 */
-	protected $responseRaw;
-
-	/**
 	 * Response with receiptStatus and playerAssignmentStatus.
 	 *
-	 * @var Response|null
+	 * @var Response
 	 */
 	protected $response;
 
 
 	/**
 	 * EET3rdPartyAPI constructor.
+	 *
+	 * @codeCoverageIgnore
 	 *
 	 * @param string|null $mode
 	 *
@@ -117,52 +114,6 @@ class Uctenkovka
 
 		return $this;
 	}
-
-	/**
-	 * Send Request to Uctenkovka API. Return just bool. If you want more information just use getResponse method after send call.
-	 *
-	 * @param Request    $request
-	 * @param array|null $userOptions
-	 *
-	 * @return bool
-	 * @throws UctenkovkaException
-	 */
-	public function send(Request $request, ?array $userOptions = null): bool
-	{
-		$this->response = null; // unset response
-
-		$ch = curl_init($this->url);
-		$options = $this->getCurlOptions($request);
-		if ($userOptions !== null) {
-			$options = $userOptions + $options;
-		}
-		curl_setopt_array($ch, $options);
-		$data = curl_exec($ch);
-
-		if ($data === false) {
-			throw new UctenkovkaException(sprintf('Curl error: %s - %s', curl_errno($ch), curl_error($ch)), UctenkovkaException::CURL_ERROR);
-		}
-
-		$this->setResponseRaw(json_decode($data));
-
-		$this->response = new Response();
-
-		$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-		if ($httpCode === 201) {
-			$this->response = new Response();
-			$this->response->setReceiptStatus($this->getResponseRaw()->receiptStatus)
-				->setPlayerAssignmentStatus($this->getResponseRaw()->playerAssignmentStatus);
-
-			return true;
-		} else if ($httpCode === 400) {
-			$this->response->setFailure($this->getResponseRaw());
-
-			return false;
-		} else {
-			throw new UctenkovkaException('Unknown HTTP Code Response status.', UctenkovkaException::UNKNOWN_RESPONSE);
-		}
-	}
-
 
 	/**
 	 * Get CURL options.
@@ -268,34 +219,48 @@ class Uctenkovka
 	}
 
 	/**
-	 * @return array|stdClass|null
+	 * @return Response|null
 	 */
-	public function getResponseRaw()
-	{
-		return $this->responseRaw;
-	}
-
-	/**
-	 * @param array|stdClass|null $responseRaw
-	 */
-	public function setResponseRaw($responseRaw): void
-	{
-		$this->responseRaw = $responseRaw;
-	}
-
-	/**
-	 * @return Response
-	 */
-	public function getResponse(): Response
+	public function getResponse(): ?Response
 	{
 		return $this->response;
 	}
 
 	/**
-	 * @param Response $response
+	 * Send Request to Uctenkovka API. Return just bool. If you want more information just use getResponse method after send call.
+	 *
+	 * @param Request    $request
+	 * @param array|null $userOptions
+	 *
+	 * @return bool
+	 * @throws UctenkovkaException
+	 * @throws Exception\ResponseException
 	 */
-	public function setResponse(Response $response): void
+	public function send(Request $request, ?array $userOptions = null): bool
 	{
-		$this->response = $response;
+		if ($this->getSslCert() === null) {
+			throw new UctenkovkaException('SSL Certificate is not set. Use method Uctenkovka::setSslCert first.', UctenkovkaException::SSL_CERT_NOT_SET);
+		}
+
+		$this->response = null; // unset response
+
+		$ch = curl_init($this->url);
+		$options = $this->getCurlOptions($request);
+		if ($userOptions !== null) {
+			$options = $userOptions + $options;
+		}
+		curl_setopt_array($ch, $options);
+		$data = curl_exec($ch);
+
+		if ($data === false) {
+			throw new UctenkovkaException(sprintf('Curl error: %s - %s', curl_errno($ch), curl_error($ch)), UctenkovkaException::CURL_ERROR);
+		}
+
+		$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+		$this->response = new Response($httpCode);
+		$this->response->setRawResponse($data);
+
+		return $this->response->isSuccess();
 	}
 }

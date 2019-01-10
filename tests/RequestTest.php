@@ -16,6 +16,18 @@ use xsuchy09\Uctenkovka\Request;
 class RequestTest extends \PHPUnit\Framework\TestCase
 {
 
+	const REQUEST_DATA = [
+		'email' => 'test@example.com',
+		'phone' => '777777777',
+		'basicConsent' => true,
+		'fik' => 'B3A09B52-7C87-4014',
+		'bkp' => '01234567-89abcdef',
+		'date' => '2018-03-17',
+		'time' => '16:41',
+		'amount' => 4570,
+		'simpleMode' => false
+	];
+
 	/**
 	 * @var Request;
 	 */
@@ -56,28 +68,17 @@ class RequestTest extends \PHPUnit\Framework\TestCase
 	 */
 	public function testPrepare()
 	{
-		$data = [
-			'email' => 'test@example.com',
-			'phone' => '777777777',
-			'basicConsent' => true,
-			'fik' => 'B3A09B52-7C87-4014',
-			'bkp' => '01234567-89abcdef',
-			'date' => '2018-03-17',
-			'time' => '16:41',
-			'amount' => 4570,
-			'simpleMode' => false
-		];
-		$this->request->prepare($data);
-		$this->assertEquals($data['email'], $this->request->getEmail());
-		$this->assertEquals($data['phone'], $this->request->getPhone());
-		$this->assertEquals($data['basicConsent'], $this->request->isBasicConsent());
-		$this->assertEquals($data['fik'], $this->request->getFik());
-		$this->assertEquals($data['bkp'], $this->request->getBkp());
-		$this->assertEquals($data['date'], $this->request->getDate());
-		$this->assertEquals($data['time'], $this->request->getTime());
-		$this->assertEquals($data['amount'], $this->request->getAmount());
-		$this->assertEquals($data['simpleMode'], $this->request->isSimpleMode());
-		$this->assertEquals(json_encode($data), $this->request->getJson());
+		$this->request->prepare(self::REQUEST_DATA);
+		$this->assertEquals(self::REQUEST_DATA['email'], $this->request->getEmail());
+		$this->assertEquals(self::REQUEST_DATA['phone'], $this->request->getPhone());
+		$this->assertEquals(self::REQUEST_DATA['basicConsent'], $this->request->isBasicConsent());
+		$this->assertEquals(self::REQUEST_DATA['fik'], $this->request->getFik());
+		$this->assertEquals(self::REQUEST_DATA['bkp'], $this->request->getBkp());
+		$this->assertEquals(self::REQUEST_DATA['date'], $this->request->getDate());
+		$this->assertEquals(self::REQUEST_DATA['time'], $this->request->getTime());
+		$this->assertEquals(self::REQUEST_DATA['amount'], $this->request->getAmount());
+		$this->assertEquals(self::REQUEST_DATA['simpleMode'], $this->request->isSimpleMode());
+		$this->assertEquals(json_encode(self::REQUEST_DATA), $this->request->getJson());
 	}
 
 	/**
@@ -185,18 +186,7 @@ class RequestTest extends \PHPUnit\Framework\TestCase
 	 */
 	public function testReset()
 	{
-		$data = [
-			'email' => 'test@example.com',
-			'phone' => '777777777',
-			'basicConsent' => true,
-			'fik' => 'B3A09B52-7C87-4014',
-			'bkp' => '01234567-89abcdef',
-			'date' => '2018-03-17',
-			'time' => '16:41',
-			'amount' => 4570,
-			'simpleMode' => false
-		];
-		$this->request->prepare($data);
+		$this->request->prepare(self::REQUEST_DATA);
 		$this->request->reset();
 
 		$request2 = new Request();

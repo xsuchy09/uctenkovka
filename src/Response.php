@@ -9,12 +9,35 @@
 
 namespace xsuchy09\Uctenkovka;
 
+use LogicException;
+use xsuchy09\Uctenkovka\Exception\ResponseException;
+
 /**
  * Class Response
  * @package xsuchy09\Uctenkovka
  */
 class Response
 {
+
+	/**
+	 * @var bool
+	 */
+	protected $success;
+
+	/**
+	 * HTTP Code of response from Uctenkovka.
+	 *
+	 * @var int
+	 */
+	protected $httpCode;
+
+	/**
+	 * Response from Uctenkovka as it came (JSON string).
+	 *
+	 * @var string
+	 */
+	protected $rawResponse;
+
 	/**
 	 * Status of newly registered receipt.
 	 *
@@ -51,16 +74,97 @@ class Response
 	 * Response constructor.
 	 *
 	 * @codeCoverageIgnore
+	 *
+	 * @param int $httpCode
+	 *
+	 * @throws ResponseException
 	 */
-	public function __construct()
+	public function __construct(int $httpCode)
 	{
-
+		$this->setHttpCode($httpCode);
 	}
 
 	/**
-	 * @return string
+	 * @return int|null
 	 */
-	public function getReceiptStatus(): string
+	public function getHttpCode(): ?int
+	{
+		return $this->httpCode;
+	}
+
+	/**
+	 * @param int $httpCode
+	 *
+	 * @return Response
+	 * @throws ResponseException
+	 */
+	protected function setHttpCode(int $httpCode)
+	{
+		$this->httpCode = $httpCode;
+
+		if ($this->httpCode === 201) {
+			$this->setSuccess(true);
+		} else if ($this->httpCode === 400) {
+			$this->setSuccess(false);
+		} else {
+			throw new ResponseException(sprintf('Unexpected HTTP Code Response status "%d".', $this->httpCode), ResponseException::UNEXPECTED_RESPONSE);
+		}
+
+		return $this;
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function isSuccess(): bool
+	{
+		return $this->success;
+	}
+
+	/**
+	 * @param bool $success
+	 *
+	 * @return Response
+	 */
+	protected function setSuccess(bool $success): Response
+	{
+		$this->success = $success;
+		return $this;
+	}
+
+	/**
+	 * @return string|null
+	 */
+	public function getRawResponse(): ?string
+	{
+		return $this->rawResponse;
+	}
+
+	/**
+	 * @param string $rawResponse
+	 *
+	 * @return Response
+	 */
+	public function setRawResponse(string $rawResponse): Response
+	{
+		$this->rawResponse = $rawResponse;
+
+		$response = json_decode($this->rawResponse);
+
+		if ($this->isSuccess() === true) {
+			$this->setReceiptStatus($response->receiptStatus);
+			$this->setPlayerAssignmentStatus($response->playerAssignmentStatus);
+		} else if ($this->isSuccess() === false) {
+			$this->setFailure($response);
+		}
+
+		return $this;
+	}
+
+	/**
+	 * @return string|null
+	 */
+	public function getReceiptStatus(): ?string
 	{
 		return $this->receiptStatus;
 	}
@@ -70,16 +174,16 @@ class Response
 	 *
 	 * @return Response
 	 */
-	public function setReceiptStatus(string $receiptStatus): Response
+	protected function setReceiptStatus(string $receiptStatus): Response
 	{
 		$this->receiptStatus = $receiptStatus;
 		return $this;
 	}
 
 	/**
-	 * @return string
+	 * @return string|null
 	 */
-	public function getPlayerAssignmentStatus(): string
+	public function getPlayerAssignmentStatus(): ?string
 	{
 		return $this->playerAssignmentStatus;
 	}
@@ -89,16 +193,16 @@ class Response
 	 *
 	 * @return Response
 	 */
-	public function setPlayerAssignmentStatus(string $playerAssignmentStatus): Response
+	protected function setPlayerAssignmentStatus(string $playerAssignmentStatus): Response
 	{
 		$this->playerAssignmentStatus = $playerAssignmentStatus;
 		return $this;
 	}
 
 	/**
-	 * @return array
+	 * @return array|null
 	 */
-	public function getFailure(): array
+	public function getFailure(): ?array
 	{
 		return $this->failure;
 	}
@@ -108,10 +212,24 @@ class Response
 	 *
 	 * @return Response
 	 */
-	public function setFailure(array $failure): Response
+	protected function setFailure(array $failure): Response
 	{
 		$this->failure = $failure;
 		return $this;
 	}
 
+	/**
+	 * @return array|null
+	 */
+	public function getFailureMessages(): ?array
+	{
+		$messages = null;
+		if (true === is_array($this->getFailure())) {
+			$messages = [];
+			foreach ($this->getFailure() as $failure) {
+				$messages[] = sprintf('Error at field "%s" with code "%s" and message "%s".', $failure->field, $failure->code, $failure->message);
+			}
+		}
+		return $messages;
+	}
 }
