@@ -71,7 +71,7 @@ class UctenkovkaTest extends \PHPUnit\Framework\TestCase
 	 */
 	public function testSetSslCA()
 	{
-		$this->assertEquals(Uctenkovka::DEFAULT_SSL_CA, $this->uctenkovka->getSslCA());
+		$this->assertNull($this->uctenkovka->getSslCA());
 
 		$path = __DIR__ . '/../src/certs/cacert-2018-12-05.pem';
 		$this->uctenkovka->setSslCA($path);
@@ -106,7 +106,7 @@ class UctenkovkaTest extends \PHPUnit\Framework\TestCase
 	 */
 	public function testSetSslCert()
 	{
-		$path = __DIR__ . '/../src/certs/cacert-2018-12-05.pem';
+		$path = __DIR__ . '/../src/certs/wamos.crt.pem';
 		$this->uctenkovka->setSslCert($path);
 		$this->assertEquals($path, $this->uctenkovka->getSslCert());
 	}
@@ -135,6 +135,50 @@ class UctenkovkaTest extends \PHPUnit\Framework\TestCase
 	}
 
 	/**
+	 * @covers \xsuchy09\Uctenkovka\Uctenkovka::getSslKey
+	 */
+	public function testGetSslKey()
+	{
+		$this->assertNull($this->uctenkovka->getSslKey());
+	}
+
+	/**
+	 * @covers \xsuchy09\Uctenkovka\Uctenkovka::setSslKey
+	 * @covers \xsuchy09\Uctenkovka\Uctenkovka::getSslKey
+	 *
+	 * @throws UctenkovkaException
+	 */
+	public function testSetSslKey()
+	{
+		$path = __DIR__ . '/../src/certs/wamos.key.pem';
+		$this->uctenkovka->setSslKey($path);
+		$this->assertEquals($path, $this->uctenkovka->getSslKey());
+	}
+
+	/**
+	 * @covers \xsuchy09\Uctenkovka\Uctenkovka::setSslCert
+	 *
+	 * @throws UctenkovkaException
+	 */
+	public function testSetSslKeyException()
+	{
+		$this->expectException(UctenkovkaException::class);
+		$this->expectExceptionCode(UctenkovkaException::SSL_KEY_NOT_EXISTS);
+		$this->uctenkovka->setSslKey('./' . uniqid(mt_rand()));
+	}
+
+	/**
+	 * @covers \xsuchy09\Uctenkovka\Uctenkovka::setSslCertPassword
+	 * @covers \xsuchy09\Uctenkovka\Uctenkovka::getSslCertPassword
+	 */
+	public function testSetSslKeyPassword()
+	{
+		$password = uniqid(mt_rand());
+		$this->uctenkovka->setSslKeyPassword($password);
+		$this->assertEquals($password, $this->uctenkovka->getSslKeyPassword());
+	}
+
+	/**
 	 * @covers \xsuchy09\Uctenkovka\Uctenkovka::getResponse
 	 */
 	public function testGetResponse()
@@ -143,12 +187,31 @@ class UctenkovkaTest extends \PHPUnit\Framework\TestCase
 
 	}
 
-	/*
+	/**
+	 * @covers \xsuchy09\Uctenkovka\Uctenkovka::setMode
+	 * @covers \xsuchy09\Uctenkovka\Uctenkovka::setSslCert
+	 * @covers \xsuchy09\Uctenkovka\Uctenkovka::setSslKey
+	 * @covers \xsuchy09\Uctenkovka\Uctenkovka::send
+	 * @covers \xsuchy09\Uctenkovka\Uctenkovka::getResponse
+	 *
+	 * @throws UctenkovkaException
+	 * @throws \xsuchy09\Uctenkovka\Exception\RequestException
+	 * @throws \xsuchy09\Uctenkovka\Exception\ResponseException
+	 */
 	public function testSend()
 	{
 		$request = new Request(RequestTest::REQUEST_DATA);
-		$this->uctenkovka->setSslCert(__DIR__ . '/../src/certs/test.cert');
+		$request->setDateTime();
+
+		$this->uctenkovka->setMode(Uctenkovka::MODE_TESTING);
+		$this->uctenkovka->setSslCert(__DIR__ . '/../src/certs/wamos.crt.pem');
+		$this->uctenkovka->setSslKey(__DIR__ . '/../src/certs/wamos.key.pem');
 		$this->uctenkovka->send($request);
+
+		$this->assertTrue($this->uctenkovka->getResponse()->isSuccess());
+		$this->assertEquals(201, $this->uctenkovka->getResponse()->getHttpCode());
+		$this->assertEquals('REJECTED', $this->uctenkovka->getResponse()->getReceiptStatus());
+		$this->assertEquals('ADDED_TO_BASIC_PLAYER', $this->uctenkovka->getResponse()->getPlayerAssignmentStatus());
+		$this->assertNull($this->uctenkovka->getResponse()->getFailure());
 	}
-	*/
 }

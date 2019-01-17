@@ -22,5 +22,6 @@ class UctenkovkaException extends Exception
 	const CURL_ERROR = 2;
 	const CA_CERT_NOT_EXISTS = 3;
 	const SSL_CERT_NOT_EXISTS = 4;
-	const SSL_CERT_NOT_SET = 5;
+	const SSL_KEY_NOT_EXISTS = 5;
+	const SSL_CERT_NOT_SET = 6;
 }
