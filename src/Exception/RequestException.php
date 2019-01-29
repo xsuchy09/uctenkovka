@@ -9,7 +9,6 @@
 
 namespace xsuchy09\Uctenkovka\Exception;
 
-
 use Exception;
 
 /**

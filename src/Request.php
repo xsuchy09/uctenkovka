@@ -9,9 +9,7 @@
 
 namespace xsuchy09\Uctenkovka;
 
-
 use DateTime;
-use PHPUnit\Runner\Exception;
 use xsuchy09\Uctenkovka\Exception\RequestException;
 
 /**
@@ -128,6 +126,10 @@ class Request
 
 	/**
 	 * Request constructor.
+	 *
+	 * @param array|null $data
+	 *
+	 * @throws RequestException
 	 *
 	 * @codeCoverageIgnore
 	 */
@@ -276,12 +278,11 @@ class Request
 
 	/**
 	 * @param string $date
-	 * @param bool   $setDateTime If dateTime property should be set too or not.
 	 *
 	 * @return Request
 	 * @throws RequestException
 	 */
-	public function setDate(string $date, bool $setDateTime = true): Request
+	public function setDate(string $date): Request
 	{
 		$this->date = $date;
 
@@ -305,11 +306,11 @@ class Request
 
 	/**
 	 * @param string $time
-	 * @param bool   $setDateTime If dateTime property should be set too or not.
 	 *
 	 * @return Request
+	 * @throws RequestException
 	 */
-	public function setTime(string $time, bool $setDateTime = true): Request
+	public function setTime(string $time): Request
 	{
 		$this->time = $time;
 
@@ -371,6 +372,7 @@ class Request
 	 *
 	 * @return Request
 	 * @throws RequestException
+	 * @throws \Exception
 	 */
 	public function setDateTime(?DateTime $dateTime = null): Request
 	{

@@ -1,2 +1,2 @@
-wamos.crt.pem
-wamos.key.pem
+!cacert-2018-12-05.pem
+*.pem

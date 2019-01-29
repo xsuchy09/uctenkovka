@@ -9,8 +9,6 @@
 
 namespace xsuchy09\Uctenkovka;
 
-
-use stdClass;
 use xsuchy09\Uctenkovka\Exception\UctenkovkaException;
 
 /**

@@ -9,7 +9,6 @@
 
 namespace xsuchy09\Uctenkovka;
 
-use LogicException;
 use xsuchy09\Uctenkovka\Exception\ResponseException;
 
 /**

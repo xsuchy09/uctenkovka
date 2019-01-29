@@ -44,6 +44,9 @@ class ResponseTest extends \PHPUnit\Framework\TestCase
 	 */
 	protected $responseFailure;
 
+	/**
+	 * @throws ResponseException
+	 */
 	public function setUp()
 	{
 		$this->responseSuccess = new Response(201);
@@ -73,6 +76,7 @@ class ResponseTest extends \PHPUnit\Framework\TestCase
 	/**
 	 * @covers \xsuchy09\Uctenkovka\Response
 	 * @covers \xsuchy09\Uctenkovka\Response::setHttpCode
+	 * @throws ResponseException
 	 */
 	public function testSetHttpCode()
 	{

@@ -11,7 +11,6 @@ namespace xsuchy09\UctenkovkaTest;
 
 use xsuchy09\Uctenkovka\Exception\UctenkovkaException;
 use xsuchy09\Uctenkovka\Request;
-use xsuchy09\Uctenkovka\Response;
 use xsuchy09\Uctenkovka\Uctenkovka;
 
 class UctenkovkaTest extends \PHPUnit\Framework\TestCase
@@ -106,7 +105,7 @@ class UctenkovkaTest extends \PHPUnit\Framework\TestCase
 	 */
 	public function testSetSslCert()
 	{
-		$path = __DIR__ . '/../src/certs/wamos.crt.pem';
+		$path = __DIR__ . '/../src/certs/test_crt.pem';
 		$this->uctenkovka->setSslCert($path);
 		$this->assertEquals($path, $this->uctenkovka->getSslCert());
 	}
@@ -150,13 +149,13 @@ class UctenkovkaTest extends \PHPUnit\Framework\TestCase
 	 */
 	public function testSetSslKey()
 	{
-		$path = __DIR__ . '/../src/certs/wamos.key.pem';
+		$path = __DIR__ . '/../src/certs/test_key.pem';
 		$this->uctenkovka->setSslKey($path);
 		$this->assertEquals($path, $this->uctenkovka->getSslKey());
 	}
 
 	/**
-	 * @covers \xsuchy09\Uctenkovka\Uctenkovka::setSslCert
+	 * @covers \xsuchy09\Uctenkovka\Uctenkovka::setSslKey
 	 *
 	 * @throws UctenkovkaException
 	 */
@@ -168,8 +167,8 @@ class UctenkovkaTest extends \PHPUnit\Framework\TestCase
 	}
 
 	/**
-	 * @covers \xsuchy09\Uctenkovka\Uctenkovka::setSslCertPassword
-	 * @covers \xsuchy09\Uctenkovka\Uctenkovka::getSslCertPassword
+	 * @covers \xsuchy09\Uctenkovka\Uctenkovka::setSslKeyPassword
+	 * @covers \xsuchy09\Uctenkovka\Uctenkovka::getSslKeyPassword
 	 */
 	public function testSetSslKeyPassword()
 	{
@@ -193,6 +192,7 @@ class UctenkovkaTest extends \PHPUnit\Framework\TestCase
 	 * @covers \xsuchy09\Uctenkovka\Uctenkovka::setSslKey
 	 * @covers \xsuchy09\Uctenkovka\Uctenkovka::send
 	 * @covers \xsuchy09\Uctenkovka\Uctenkovka::getResponse
+	 * @covers \xsuchy09\Uctenkovka\Uctenkovka::getCurlOptions
 	 *
 	 * @throws UctenkovkaException
 	 * @throws \xsuchy09\Uctenkovka\Exception\RequestException
@@ -204,8 +204,8 @@ class UctenkovkaTest extends \PHPUnit\Framework\TestCase
 		$request->setDateTime();
 
 		$this->uctenkovka->setMode(Uctenkovka::MODE_TESTING);
-		$this->uctenkovka->setSslCert(__DIR__ . '/../src/certs/wamos.crt.pem');
-		$this->uctenkovka->setSslKey(__DIR__ . '/../src/certs/wamos.key.pem');
+		$this->uctenkovka->setSslCert(__DIR__ . '/../src/certs/test_crt.pem');
+		$this->uctenkovka->setSslKey(__DIR__ . '/../src/certs/test_key.pem');
 		$this->uctenkovka->send($request);
 
 		$this->assertTrue($this->uctenkovka->getResponse()->isSuccess());
@@ -213,5 +213,86 @@ class UctenkovkaTest extends \PHPUnit\Framework\TestCase
 		$this->assertEquals('REJECTED', $this->uctenkovka->getResponse()->getReceiptStatus());
 		$this->assertEquals('ADDED_TO_BASIC_PLAYER', $this->uctenkovka->getResponse()->getPlayerAssignmentStatus());
 		$this->assertNull($this->uctenkovka->getResponse()->getFailure());
+	}
+
+	/**
+	 * @covers \xsuchy09\Uctenkovka\Uctenkovka::send
+	 * @covers \xsuchy09\Uctenkovka\Uctenkovka::getCurlOptions
+	 *
+	 * @throws UctenkovkaException
+	 * @throws \xsuchy09\Uctenkovka\Exception\ResponseException
+	 * @throws \xsuchy09\Uctenkovka\Exception\RequestException
+	 */
+	public function testSendException()
+	{
+		$request = new Request(RequestTest::REQUEST_DATA);
+		$request->setDateTime();
+
+		$this->expectException(UctenkovkaException::class);
+		$this->expectExceptionCode(UctenkovkaException::SSL_CERT_NOT_SET);
+		$this->uctenkovka->send($request);
+	}
+
+	/**
+	 * @covers \xsuchy09\Uctenkovka\Uctenkovka::send
+	 * @covers \xsuchy09\Uctenkovka\Uctenkovka::getCurlOptions
+	 * @covers \xsuchy09\Uctenkovka\Uctenkovka::setSslCA
+	 * @covers \xsuchy09\Uctenkovka\Uctenkovka::setSslCert
+	 * @covers \xsuchy09\Uctenkovka\Uctenkovka::setSslCertPassword
+	 * @covers \xsuchy09\Uctenkovka\Uctenkovka::setSslKey
+	 * @covers \xsuchy09\Uctenkovka\Uctenkovka::setSslKeyPassword
+	 *
+	 * @throws UctenkovkaException
+	 * @throws \xsuchy09\Uctenkovka\Exception\RequestException
+	 * @throws \xsuchy09\Uctenkovka\Exception\ResponseException
+	 */
+	public function testSendUserOptions()
+	{
+		$request = new Request(RequestTest::REQUEST_DATA);
+		$request->setDateTime();
+
+		$userOptions = [
+			CURLOPT_TIMEOUT => 15,
+			CURLOPT_CONNECTTIMEOUT => 10
+		];
+
+		$this->uctenkovka->setMode(Uctenkovka::MODE_TESTING);
+		$this->uctenkovka->setSslCA(__DIR__ . '/../src/certs/cacert-2018-12-05.pem');
+		$this->uctenkovka->setSslCert(__DIR__ . '/../src/certs/test_crt.pem');
+		$this->uctenkovka->setSslKey(__DIR__ . '/../src/certs/test_key.pem');
+		$this->uctenkovka->setSslCertPassword(uniqid(mt_rand()));
+		$this->uctenkovka->setSslKeyPassword(uniqid(mt_rand()));
+		$this->uctenkovka->send($request, $userOptions);
+
+		$this->assertFalse($this->uctenkovka->getResponse()->isSuccess());
+		$this->assertEquals(400, $this->uctenkovka->getResponse()->getHttpCode());
+		$this->assertIsArray($this->uctenkovka->getResponse()->getFailure());
+		$this->assertEquals('object.duplicate', $this->uctenkovka->getResponse()->getFailure()[0]->code); // same receipt as higher
+	}
+
+	/**
+	 * @covers \xsuchy09\Uctenkovka\Uctenkovka::send
+	 * @covers \xsuchy09\Uctenkovka\Uctenkovka::getCurlOptions
+	 *
+	 * @throws UctenkovkaException
+	 * @throws \xsuchy09\Uctenkovka\Exception\RequestException
+	 * @throws \xsuchy09\Uctenkovka\Exception\ResponseException
+	 */
+	public function testSendExceptionCurl()
+	{
+		$request = new Request(RequestTest::REQUEST_DATA);
+		$request->setDateTime();
+
+		$userOptions = [
+			CURLOPT_URL => uniqid(mt_rand())
+		];
+
+		$this->expectException(UctenkovkaException::class);
+		$this->expectExceptionCode(UctenkovkaException::CURL_ERROR);
+
+		$this->uctenkovka->setMode(Uctenkovka::MODE_TESTING);
+		$this->uctenkovka->setSslCert(__DIR__ . '/../src/certs/test_crt.pem');
+		$this->uctenkovka->setSslKey(__DIR__ . '/../src/certs/test_key.pem');
+		$this->uctenkovka->send($request, $userOptions);
 	}
 }

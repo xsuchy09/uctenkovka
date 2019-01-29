@@ -35,6 +35,7 @@ class RequestTest extends \PHPUnit\Framework\TestCase
 
 	/**
 	 * Setup.
+	 * @throws RequestException
 	 */
 	protected function setUp()
 	{
@@ -126,6 +127,8 @@ class RequestTest extends \PHPUnit\Framework\TestCase
 	 * @covers \xsuchy09\Uctenkovka\Request::getDate
 	 * @covers \xsuchy09\Uctenkovka\Request::setTime
 	 * @covers \xsuchy09\Uctenkovka\Request::getTime
+	 * @throws RequestException
+	 * @throws \Exception
 	 */
 	public function testSetDateTime()
 	{
@@ -167,6 +170,7 @@ class RequestTest extends \PHPUnit\Framework\TestCase
 	/**
 	 * @covers \xsuchy09\Uctenkovka\Request::setTime
 	 * @covers \xsuchy09\Uctenkovka\Request::getTime
+	 * @throws RequestException
 	 */
 	public function testSetTime()
 	{
