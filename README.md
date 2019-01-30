@@ -1,6 +1,6 @@
 # Uctenkovka
 
-PHP library for communication with Uctenkovka (ETT state competition with receipts). See [Uctenkovka.cz](https://www.uctenkovka.cz/).
+PHP library for communication with Uctenkovka (ETT Czech Republic competition with receipts). See [Uctenkovka.cz](https://www.uctenkovka.cz/).
 PHP 7.1 is required.
 
 Authors:
