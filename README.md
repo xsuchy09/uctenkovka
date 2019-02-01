@@ -1,7 +1,7 @@
 # Uctenkovka
 
 PHP library for communication with Uctenkovka (ETT Czech Republic competition with receipts). See [Uctenkovka.cz](https://www.uctenkovka.cz/).
-PHP 7.1 is required.
+PHP 7.1+ is required.
 
 Authors:
  - Petr Suchy ([xsuchy09](mailto:suchy@wamos.cz?subject=GitHub%20-%20Uctenkovka) - [WAMOS.cz](https://www.wamos.cz))
