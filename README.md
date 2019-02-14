@@ -48,6 +48,9 @@ You can see tests which are included in this repository. To run that tests you n
 #### How to send receipt/request into Uctenkovka
 
 ```php
+use xsuchy09\Uctenkovka\Request;
+use xsuchy09\Uctenkovka\Uctenkovka;
+
 $request = new Request();
 $request->setEmail('test@example.com')
 	->setPhone('777777777')
@@ -59,10 +62,11 @@ $request->setEmail('test@example.com')
 	->setAmount(4570) // in hellers
 	->setSimpleMode(false);
 
-$this->uctenkovka->setMode(Uctenkovka::MODE_TESTING);
-$this->uctenkovka->setSslCert(__DIR__ . '/../src/certs/test_crt.pem');
-$this->uctenkovka->setSslKey(__DIR__ . '/../src/certs/test_key.pem');
-$this->uctenkovka->send($request);
+$uctenkovka = new Uctenkovka();
+$uctenkovka->setMode(Uctenkovka::MODE_TESTING);
+$uctenkovka->setSslCert(__DIR__ . '/../src/certs/test_crt.pem');
+$uctenkovka->setSslKey(__DIR__ . '/../src/certs/test_key.pem');
+$uctenkovka->send($request);
 ```
 
 You can set date and time of receipt (request) at once with `\DateTime` object:
@@ -72,6 +76,8 @@ $request->setDateTime(DateTime::createFromFormat('Y-m-d H:i:s', $date)); // seco
 
 You can set all of receipt/request values as array - not required param of `Request` constructor:
 ```php
+use xsuchy09\Uctenkovka\Request;
+
 $request = new Request([
     'email' => 'test@example.com',
     'phone' => '777777777',
